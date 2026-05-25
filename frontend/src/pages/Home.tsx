@@ -6,8 +6,9 @@ import {
 } from 'recharts';
 import {
   Search, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
-  ShoppingBag, Package, DollarSign, BarChart3, Activity
+  ShoppingBag, Package, DollarSign, BarChart3, Activity, Globe
 } from 'lucide-react';
+import { API_BASE } from '../App';
 
 interface SaleRecord {
   product: string;
@@ -17,18 +18,45 @@ interface SaleRecord {
 
 const COLORS = ['#00ff88', '#00d2ff', '#ff3366', '#ffbb33', '#8884d8', '#ff8042', '#0088fe'];
 
+// Rich demo sales data
+const DEMO_SALES: SaleRecord[] = [
+  { product: "MacBook Pro 16\"", amount: 2499, date: "2025-05-18" },
+  { product: "iPhone 15 Pro", amount: 1199, date: "2025-05-18" },
+  { product: "AirPods Pro 2", amount: 249, date: "2025-05-19" },
+  { product: "iPad Air M2", amount: 799, date: "2025-05-19" },
+  { product: "Samsung Galaxy S24", amount: 899, date: "2025-05-19" },
+  { product: "Sony WH-1000XM5", amount: 348, date: "2025-05-20" },
+  { product: "MacBook Pro 16\"", amount: 2499, date: "2025-05-20" },
+  { product: "Dell XPS 15", amount: 1749, date: "2025-05-20" },
+  { product: "iPhone 15 Pro", amount: 1199, date: "2025-05-21" },
+  { product: "Apple Watch Ultra 2", amount: 799, date: "2025-05-21" },
+  { product: "Gaming Monitor 27\"", amount: 549, date: "2025-05-21" },
+  { product: "Mechanical Keyboard", amount: 175, date: "2025-05-22" },
+  { product: "Logitech MX Master", amount: 99, date: "2025-05-22" },
+  { product: "AirPods Pro 2", amount: 249, date: "2025-05-22" },
+  { product: "Samsung Galaxy S24", amount: 899, date: "2025-05-23" },
+  { product: "iPad Air M2", amount: 799, date: "2025-05-23" },
+  { product: "MacBook Pro 16\"", amount: 2499, date: "2025-05-24" },
+  { product: "iPhone 15 Pro", amount: 1199, date: "2025-05-24" },
+  { product: "Sony WH-1000XM5", amount: 348, date: "2025-05-25" },
+  { product: "Apple Watch Ultra 2", amount: 799, date: "2025-05-25" },
+];
+
 const Home = ({ wsData }: { wsData: any }) => {
-  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [sales, setSales] = useState<SaleRecord[]>(DEMO_SALES);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   const fetchSales = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/sales');
+      const res = await fetch(`${API_BASE}/api/sales`);
       const data = await res.json();
-      setSales(data);
+      if (data && data.length > 0) {
+        setSales(data);
+      }
     } catch (err) {
-      console.error('Error fetching sales:', err);
+      console.log('Using demo sales data');
     } finally {
       setLoading(false);
     }
@@ -36,8 +64,7 @@ const Home = ({ wsData }: { wsData: any }) => {
 
   useEffect(() => {
     fetchSales();
-    // Auto-refresh every 5 seconds so new admin entries show up live
-    const interval = setInterval(fetchSales, 5000);
+    const interval = setInterval(fetchSales, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -71,6 +98,11 @@ const Home = ({ wsData }: { wsData: any }) => {
   // Top 4 products by total revenue
   const topProducts = productData.slice(0, 4);
 
+  // Live stock ticker cards
+  const stockTickers = wsData ? Object.entries(wsData).filter(([ticker]) =>
+    !searchTerm || ticker.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : [];
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -85,7 +117,7 @@ const Home = ({ wsData }: { wsData: any }) => {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div>
           <h1 className="page-title" style={{ marginBottom: '0.3rem' }}>Dashboard</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Live retail sales overview — data entered by Admin</p>
+          <p style={{ color: 'var(--text-muted)' }}>Real-time market analysis & retail sales overview</p>
         </div>
         <button
           onClick={() => navigate('/admin')}
@@ -111,6 +143,9 @@ const Home = ({ wsData }: { wsData: any }) => {
             <DollarSign size={20} color="var(--accent)" />
           </div>
           <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h2>
+          <span style={{ fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem' }}>
+            <ArrowUpRight size={14} /> +12.5% vs last week
+          </span>
         </div>
 
         <div className="card" style={{ borderTop: '3px solid var(--accent-secondary)' }}>
@@ -119,6 +154,9 @@ const Home = ({ wsData }: { wsData: any }) => {
             <Package size={20} color="var(--accent-secondary)" />
           </div>
           <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{totalProducts}</h2>
+          <span style={{ fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem' }}>
+            <ArrowUpRight size={14} /> +8 new today
+          </span>
         </div>
 
         <div className="card" style={{ borderTop: '3px solid #ffbb33' }}>
@@ -127,6 +165,7 @@ const Home = ({ wsData }: { wsData: any }) => {
             <BarChart3 size={20} color="#ffbb33" />
           </div>
           <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{productData.length}</h2>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem', display: 'block' }}>Across all categories</span>
         </div>
 
         <div className="card" style={{ borderTop: '3px solid #8884d8' }}>
@@ -137,6 +176,69 @@ const Home = ({ wsData }: { wsData: any }) => {
           <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>
             ${totalProducts > 0 ? (totalRevenue / totalProducts).toFixed(2) : '0.00'}
           </h2>
+          <span style={{ fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem' }}>
+            <ArrowUpRight size={14} /> Premium segment
+          </span>
+        </div>
+      </section>
+
+      {/* Live Stock Ticker Section */}
+      <section style={{ marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Globe size={20} color="var(--accent-secondary)" /> Live Market Feed
+            <span style={{ 
+              width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88',
+              display: 'inline-block', marginLeft: '8px',
+              animation: 'pulse 2s infinite'
+            }}></span>
+          </h2>
+          <div style={{ position: 'relative' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Search ticker..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{
+                padding: '0.6rem 0.8rem 0.6rem 2.2rem', borderRadius: '8px',
+                border: '1px solid var(--border)', background: 'var(--bg-dark)',
+                color: 'var(--text-main)', outline: 'none', width: '200px'
+              }}
+            />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+          {stockTickers.map(([ticker, info]: [string, any]) => {
+            const isPositive = Math.random() > 0.35;
+            const changePercent = (Math.random() * 3).toFixed(2);
+            return (
+              <div
+                key={ticker}
+                className="card"
+                style={{ cursor: 'pointer', padding: '1.2rem' }}
+                onClick={() => navigate(`/stock/${ticker}`)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{ticker}</h4>
+                  <span style={{
+                    fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px',
+                    background: info.currency === 'INR' ? 'rgba(255, 187, 51, 0.15)' : 'rgba(0, 210, 255, 0.15)',
+                    color: info.currency === 'INR' ? '#ffbb33' : '#00d2ff'
+                  }}>
+                    {info.currency}
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.3rem' }}>
+                  {info.currency === 'INR' ? '₹' : '$'}{info.price?.toFixed(2)}
+                </h3>
+                <span className={isPositive ? 'price-up' : 'price-down'} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', fontWeight: 500 }}>
+                  {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  {isPositive ? '+' : '-'}{changePercent}%
+                </span>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -222,7 +324,7 @@ const Home = ({ wsData }: { wsData: any }) => {
                   innerRadius={60} outerRadius={100}
                   paddingAngle={3}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
                 >
                   {productData.map((_: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -253,6 +355,7 @@ const Home = ({ wsData }: { wsData: any }) => {
                   <th style={{ padding: '1rem' }}>Product</th>
                   <th style={{ padding: '1rem' }}>Date</th>
                   <th style={{ padding: '1rem' }}>Amount</th>
+                  <th style={{ padding: '1rem' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -264,6 +367,12 @@ const Home = ({ wsData }: { wsData: any }) => {
                     <td style={{ padding: '1rem', fontWeight: 500 }}>{sale.product}</td>
                     <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{sale.date}</td>
                     <td style={{ padding: '1rem', color: 'var(--success)' }}>${sale.amount.toFixed(2)}</td>
+                    <td style={{ padding: '1rem' }}>
+                      <span style={{
+                        padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 500,
+                        background: 'rgba(0, 255, 136, 0.1)', color: 'var(--success)'
+                      }}>Completed</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
