@@ -107,7 +107,7 @@ const Analysis = () => {
               </ResponsiveContainer>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '0.5rem', fontSize: '0.8rem' }}>
-              <span style={{ color: 'var(--danger)' }}>■ Overbought (>70)</span>
+              <span style={{ color: 'var(--danger)' }}>■ Overbought (&gt;70)</span>
               <span style={{ color: '#8884d8' }}>■ RSI Value</span>
               <span style={{ color: 'var(--success)' }}>■ Oversold (&lt;30)</span>
             </div>
